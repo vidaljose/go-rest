@@ -1,4 +1,4 @@
-package handlers
+package handlers 
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"github.com/gorilla/mux"
 	"../models"
 	"strconv"
-	"encoding/json"
+	//"encoding/json"
 	//"encoding/xml"
 	//"gopkg.in/yaml.v2"
 )
@@ -16,17 +16,17 @@ func GetUsers(w http.ResponseWriter, r *http.Request){
 }
 
 func GetUser(w http.ResponseWriter, r *http.Request){
-	//user := models.User{Id:1,Username:"Jose",Password:"jose123"}
-	w.Header().Set("Content-type","aplication/json")
-	//w.Header().Set("Content-type","text/xml")
 	vars := mux.Vars(r)
 	userId,_ := strconv.Atoi(vars["id"])
 	user,err := models.GetUser(userId)
+	response := models.GetDefaultResponse(w)
 	if err!=nil{
+		response.NotFound(err.Error())
 		w.WriteHeader(http.StatusNotFound)
+	}else{
+		response.Data = user
 	}
-	output,_:=json.Marshal(&user)
-	fmt.Fprintf(w,string(output))
+	response.Send()
 }
 
 func CreateUser(w http.ResponseWriter, r *http.Request){
