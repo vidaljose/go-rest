@@ -1,42 +1,75 @@
 package handlers 
 
 import (
-	"fmt"
+	//"fmt"
 	"net/http"
 	"github.com/gorilla/mux"
 	"../models"
 	"strconv"
-	//"encoding/json"
+	"encoding/json"
 	//"encoding/xml"
 	//"gopkg.in/yaml.v2"
 )
 
 func GetUsers(w http.ResponseWriter, r *http.Request){
-	fmt.Fprintf(w,"Se obtienen todos los usuarios")
+	models.SendData(w,models.GetUsers())
 }
 
 func GetUser(w http.ResponseWriter, r *http.Request){
-	vars := mux.Vars(r)
-	userId,_ := strconv.Atoi(vars["id"])
-	user,err := models.GetUser(userId)
-	response := models.GetDefaultResponse(w)
-	if err!=nil{
-		response.NotFound(err.Error())
-		w.WriteHeader(http.StatusNotFound)
+
+	if user, err := getUserByRequest(r);err!=nil{
+		models.SendNotFound(w) //nuevo
 	}else{
-		response.Data = user
+		models.SendData(w,user) //nuevo
 	}
-	response.Send()
 }
 
 func CreateUser(w http.ResponseWriter, r *http.Request){
-	fmt.Fprintf(w,"Se crea el usuario")
+	user := models.User{}
+	decoder := json.NewDecoder(r.Body)
+	
+	if err:=decoder.Decode(&user);err != nil{
+		models.SendUnprocessableEntity(w)
+	}else{
+		models.SendData(w,models.SaveUser(user))
+	}
 }
 
 func UpdateUser(w http.ResponseWriter, r *http.Request){
-	fmt.Fprintf(w, "Se actualiza un usuario")
+	user, err := getUserByRequest(r)
+	
+	if err != nil {
+		models.SendNotFound(w)
+		return 
+	}
+	userResponse := models.User{}
+	decoder := json.NewDecoder(r.Body)
+	
+	if err := decoder.Decode(&userResponse);err != nil{
+		models.SendUnprocessableEntity(w)
+		return
+	}
+	
+	user = models.UpdateUser(user, userResponse.Username,userResponse.Password)
+	models.SendData(w,user)
 }
 
 func DeleteUser(w http.ResponseWriter, r *http.Request){
-	fmt.Fprintf(w,"Se elimina un usuario")
+	if user,err := getUserByRequest(r);err != nil{
+		models.SendNotFound(w)
+	}else{
+		models.DeleteUser(user.Id)
+		models.SendNoContent(w)
+		
+	}
+}
+
+func getUserByRequest(r *http.Request) (models.User,error){
+	vars := mux.Vars(r)
+	userId,_ := strconv.Atoi(vars["id"])
+	if user,err := models.GetUser(userId); err != nil{
+		return user,err
+	}else{
+		return user, nil
+	}
 }

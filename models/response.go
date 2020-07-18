@@ -13,14 +13,35 @@ type Response struct{
 	writer http.ResponseWriter
 }
 
-func GetDefaultResponse(w http.ResponseWriter) Response{
+func CreateDefaultResponse(w http.ResponseWriter) Response{
 	return Response{Status:http.StatusOK ,writer:w,contentType:"application/json"}
 }
 
-func (this *Response) NotFound(message string){
+//ERRORES
+func (this *Response) NotFound(){
 	this.Status = http.StatusNotFound
-	this.Data = nil
-	this.Message =message 
+	this.Message ="Resource Not Found."
+}
+func (this *Response) UnprocessableEntity(){
+	this.Status = http.StatusUnprocessableEntity
+	this.Message ="Unprocessable Entity."
+}
+func SendNotFound(w http.ResponseWriter){
+	response:= CreateDefaultResponse(w)
+	response.NotFound()
+	response.Send()
+}
+func SendUnprocessableEntity(w http.ResponseWriter){
+	response:= CreateDefaultResponse(w)
+	response.UnprocessableEntity()
+	response.Send()
+}
+
+//FUNCIONES BUENAS
+func SendData(w http.ResponseWriter, data interface{}){
+	response:=CreateDefaultResponse(w)
+	response.Data = data
+	response.Send()
 }
 func (this *Response) Send(){
 	this.writer.Header().Set("Content-Type",this.contentType)
@@ -28,4 +49,15 @@ func (this *Response) Send(){
 
 	output,_:=json.Marshal(&this)
 	fmt.Fprintf(this.writer,string(output))
+	
 }
+func SendNoContent(w http.ResponseWriter){
+	response:= CreateDefaultResponse(w)
+	response.NoContent()
+	response.Send()
+}
+func (this *Response) NoContent(){
+	this.Status = http.StatusNoContent
+	this.Message = "Send no content"
+}
+
