@@ -23,6 +23,34 @@ func CreateConnection(){
 		fmt.Println("Conexion exitosa!")
 	}
 }
+
+func CreateTables(){
+	createTable("users",userSchema)
+	existsTable("users")
+}
+
+//SI LA TABLA NO EXISTE LA CREA
+func createTable(tableName, schema string){
+	if !existsTable(tableName){
+		Exec(schema)
+	}
+} 
+
+func Exec(query string, args ...interface{})(sql.Result,error){
+	result, err := db.Exec(query,args...)
+	if err != nil{
+		log.Println(err)
+	}
+	return result, err
+}
+func Query(query string, args ...interface{})(*sql.Rows,error){
+	rows, err := db.Query(query,args...)
+	if err != nil{
+		log.Println(err)
+	}
+	return rows, err
+}
+
 func CloseConnection(){
 	db.Close()
 }
@@ -34,13 +62,10 @@ func Ping(){
 }
 
 //verifica si la tabla existe 
-func ExistsTable(tableName string) bool{
+func existsTable(tableName string) bool{
 	//SHOW TABLES LIKE 'users'
 	sql := fmt.Sprintf("SHOW TABLES LIKE '%s'", tableName)
-	rows, err := db.Query(sql)
-	if err != nil {
-		log.Println(err)
-	}
+	rows,_ := Query(sql)
 	return rows.Next() //next retorna true si esta bien 
 }
 	
