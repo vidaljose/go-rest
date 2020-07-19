@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"log"
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -25,6 +26,24 @@ func CreateConnection(){
 func CloseConnection(){
 	db.Close()
 }
+//verifica si hay conexion
+func Ping(){
+	if err := db.Ping(); err != nil {
+		panic(err)
+	}
+}
+
+//verifica si la tabla existe 
+func ExistsTable(tableName string) bool{
+	//SHOW TABLES LIKE 'users'
+	sql := fmt.Sprintf("SHOW TABLES LIKE '%s'", tableName)
+	rows, err := db.Query(sql)
+	if err != nil {
+		log.Println(err)
+	}
+	return rows.Next() //next retorna true si esta bien 
+}
+	
 //conexion mysql
 //<username>:<password>@tcp(<host>:<port>)/<database>
 func generateURL() string{
