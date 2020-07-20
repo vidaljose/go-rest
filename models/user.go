@@ -1,12 +1,35 @@
 package models 
 
-import "errors"
+//import "errors"
 
 type User struct{
-	Id       int    `json:"id"`
+	Id       int64  `json:"id"`
 	Username string `json:"username"`
 	Password string `json:"password"`
+	Email    string `json:"email"`
 }
+func (this *User) Save(){
+	if this.Id == 0 {
+		this.insert()
+	}else{
+		this.update()
+	}
+}
+func (this *User) insert(){
+	sql :="INSERT users SET username=?, password=?, email=?"
+	result , _ := Exec(sql,this.Username,this.Password, this.Email)
+	this.Id , _ = result.LastInsertId() //int64
+}
+func (this *User) update(){
+	sql := "UPDATE users SET username=?, password=?, email=?"
+	Exec(sql, this.Username, this.Password, this.Email)
+}
+func (this *User) Delete(){
+	sql := "DELETE FROM users WHERE id=?"
+	Exec(sql,this.Id)
+}
+
+
 
 const userSchema string = `CREATE TABLE users(
 	id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -17,42 +40,38 @@ const userSchema string = `CREATE TABLE users(
 
 type Users []User //supongo que estructura para lista de objetos
 
-var users = make(map[int]User)
-
-func SetDefaultUser(){
-	user := User{1,"JoseVidal","123"}
-	users[user.Id] = user
+func NewUser(username, password, email string) *User{
+	user := &User{Username:username,Password:password,Email:email}
+	return user
 }
 
-func GetUser(userId int)(User,error){
-	if user,ok:=users[userId];ok{
-		return user,nil
+func CreateUser(username, password, email string) *User{
+	user := NewUser(username,password,email)
+	user.Save()
+	return user
+}
+
+func GetUser(id int) *User{
+	user := NewUser("","","")
+	sql := "SELECT id, username, password, email FROM users WHERE id=?"
+	rows , _ := Query(sql,id)
+	
+	for rows.Next(){
+		rows.Scan(&user.Id,&user.Username,&user.Password,&user.Email)
 	}
-	return User{}, errors.New("No se encuentra el usuario")
+	return user
 }
 
-//retornar todos los usuarios
 func GetUsers() Users{
-	list := Users{}
-	for _,user := range users{
-		list = append(list,user)
+	sql := "SELECT id,username,password,email FROM users"
+	users := Users{}
+	rows,_ := Query(sql)
+	
+	for rows.Next() {
+		user := User{}
+		rows.Scan(&user.Id,&user.Username,&user.Password,&user.Email)
+		users = append(users,user)
 	}
-	return list
+	return users
 }
-
-func SaveUser(user User) User{
-	user.Id = len(users) + 1
-	users[user.Id] = user
-	return user
-}
-
-func UpdateUser(user User,username string,password string) User{
-	user.Username = username
-	user.Password = password
-	users[user.Id] = user
-	return user
-}
-
-func DeleteUser(id int){
-	delete(users, id) //primer parametro mapa, segundo llave
-}
+		

@@ -33,8 +33,16 @@ func CreateTables(){
 func createTable(tableName, schema string){
 	if !existsTable(tableName){
 		Exec(schema)
+	}else{
+		TruncateTable(tableName)
 	}
 } 
+func TruncateTable(tableName string){
+	sql := fmt.Sprintf("TRUNCATE TABLE %s",tableName)
+	Exec(sql)
+}
+
+
 
 func Exec(query string, args ...interface{})(sql.Result,error){
 	result, err := db.Exec(query,args...)
